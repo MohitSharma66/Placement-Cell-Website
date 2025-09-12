@@ -99,7 +99,7 @@ class Database {
     const result = await collection.updateOne(
       { _id: studentId },
       { 
-        $push: { applications: jobId },
+        $push: { applications: jobId as any },
         $set: { updatedAt: new Date() }
       }
     )
@@ -184,7 +184,7 @@ class Database {
     const result = await collection.updateOne(
       { _id: jobId },
       { 
-        $push: { applications: studentId },
+        $push: { applications: studentId as any },
         $set: { updatedAt: new Date() }
       }
     )
