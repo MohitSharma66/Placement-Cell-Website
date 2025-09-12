@@ -4,9 +4,10 @@ import { google } from 'googleapis';
 export class GoogleSheetsService {
   private sheets: any;
   private auth: any;
+  private ready: Promise<void>;
 
   constructor() {
-    this.initializeAuth();
+    this.ready = this.initializeAuth();
   }
 
   private async initializeAuth() {
@@ -51,6 +52,9 @@ export class GoogleSheetsService {
     studentCgpa?: number;
   }) {
     try {
+      // Wait for service to be ready
+      await this.ready;
+      
       // Skip if service is not initialized
       if (!this.sheets || !this.auth) {
         console.log('Google Sheets service not available - skipping log');
@@ -78,21 +82,49 @@ export class GoogleSheetsService {
         applicationData.status
       ];
 
-      // Append the row to the sheet
-      await this.sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: 'Applications!A:J', // Adjust range as needed
-        valueInputOption: 'RAW',
-        resource: {
-          values: [rowData]
-        }
-      });
+      // Try to append the row to the sheet
+      try {
+        const result = await this.sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: 'Applications!A:J', // Adjust range as needed
+          valueInputOption: 'RAW',
+          resource: {
+            values: [rowData]
+          }
+        });
 
-      console.log('Successfully logged application to Google Sheets:', {
-        student: applicationData.studentName,
-        job: applicationData.jobTitle,
-        company: applicationData.companyName
-      });
+        console.log('Successfully logged application to Google Sheets:', {
+          student: applicationData.studentName,
+          job: applicationData.jobTitle,
+          company: applicationData.companyName,
+          updatedRange: result.data.updates?.updatedRange
+        });
+      } catch (appendError: any) {
+        // If sheet doesn't exist or has issues, try to create headers and retry
+        if (appendError.code === 400 || appendError.message?.includes('Unable to parse range')) {
+          console.log('Creating sheet headers and retrying...');
+          await this.createSampleSheet();
+          
+          // Retry the append
+          const result = await this.sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: 'Applications!A:J',
+            valueInputOption: 'RAW',
+            resource: {
+              values: [rowData]
+            }
+          });
+
+          console.log('Successfully logged application to Google Sheets after creating headers:', {
+            student: applicationData.studentName,
+            job: applicationData.jobTitle,
+            company: applicationData.companyName,
+            updatedRange: result.data.updates?.updatedRange
+          });
+        } else {
+          throw appendError;
+        }
+      }
 
     } catch (error) {
       console.error('Error logging to Google Sheets:', error);
