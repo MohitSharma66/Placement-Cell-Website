@@ -7,7 +7,8 @@ let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
 if (!process.env.MONGODB_URI) {
-  throw new Error('Please add your Mongo URI to .env.local')
+  console.warn('MONGODB_URI is not set. Database operations will fail until MongoDB is configured.')
+  throw new Error('MongoDB URI not configured. Please set MONGODB_URI environment variable.')
 }
 
 if (process.env.NODE_ENV === 'development') {
