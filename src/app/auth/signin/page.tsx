@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { GraduationCap, Building2, ArrowLeft } from 'lucide-react'
 
-export default function SignIn() {
+function SignInForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [userType, setUserType] = useState<'student' | 'recruiter'>('student')
@@ -159,5 +159,13 @@ export default function SignIn() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function SignIn() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm />
+    </Suspense>
   )
 }
