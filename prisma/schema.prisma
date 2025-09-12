@@ -13,20 +13,65 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Student {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  cgpa         Float
+  experience   Int      @default(0) // in months
+  branch       String
+  yearOfPassing Int
+  resumes      String   @default("") // JSON string array of Google Drive links
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations
+  applications Application[]
 }
 
-model Post {
+model Recruiter {
   id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  email     String   @unique
+  name      String
+  company   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Relations
+  jobs      Job[]
+}
+
+model Job {
+  id               String   @id @default(cuid())
+  title            String
+  description      String
+  company          String
+  type             String   // 'internship' or 'job'
+  minCgpa          Float
+  minExperience    Int      @default(0) // in months
+  requiredBranches String   // JSON string array
+  location         String
+  salary           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  postedById       String
+  postedBy         Recruiter @relation(fields: [postedById], references: [id], onDelete: Cascade)
+  applications     Application[]
+}
+
+model Application {
+  id         String   @id @default(cuid())
+  status     String   @default("pending") // 'pending', 'reviewed', 'accepted', 'rejected'
+  resumeLink String   @default("")
+  appliedAt  DateTime @default(now())
+  
+  // Relations
+  studentId  String
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  jobId      String
+  job        Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  @@unique([studentId, jobId]) // Prevent duplicate applications
 }

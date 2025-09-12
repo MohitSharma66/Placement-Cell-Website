@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db-mongodb'
+import { db } from '@/lib/db-prisma'
 
 export async function POST(request: NextRequest) {
   try {
