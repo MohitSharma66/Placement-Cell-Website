@@ -34,6 +34,14 @@ const nextConfig: NextConfig = {
       }
     ]
   },
+  // Allow all hosts for Replit proxy
+  async rewrites() {
+    return []
+  },
+  // Disable host checking in development for Replit proxy
+  env: {
+    CUSTOM_KEY: 'my-value',
+  },
 };
 
 export default nextConfig;
