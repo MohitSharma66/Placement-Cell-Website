@@ -31,12 +31,23 @@ async function createCustomServer() {
       handle(req, res);
     });
 
-    // Setup Socket.IO
+    // Setup Socket.IO with secure CORS
+    const allowedOrigins = dev ? [
+      'http://localhost:5000',
+      'http://127.0.0.1:5000',
+      /https:\/\/.*\.repl\.co$/,
+      /https:\/\/.*\.replit\.dev$/,
+      /https:\/\/.*\.replit\.com$/
+    ] : [
+      process.env.NEXTAUTH_URL || 'http://localhost:5000'
+    ];
+
     const io = new Server(server, {
       path: '/api/socketio',
       cors: {
-        origin: "*",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
       }
     });
 

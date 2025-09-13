@@ -20,6 +20,15 @@ const nextConfig: NextConfig = {
     // 构建时忽略ESLint错误
     ignoreDuringBuilds: true,
   },
+  // Allow cross-origin requests for Replit proxy
+  allowedDevOrigins: [
+    'http://127.0.0.1:5000',
+    'http://localhost:5000',
+    'https://063df6f9-831d-45df-bf9a-d3fb5823981b-00-k4kqrt2jv18p.picard.replit.dev',
+    /^https:\/\/.*\.repl\.co$/,
+    /^https:\/\/.*\.replit\.dev$/,
+    /^https:\/\/.*\.replit\.com$/
+  ],
   // Headers to handle Replit proxy
   async headers() {
     return [
@@ -33,14 +42,6 @@ const nextConfig: NextConfig = {
         ]
       }
     ]
-  },
-  // Allow all hosts for Replit proxy
-  async rewrites() {
-    return []
-  },
-  // Disable host checking in development for Replit proxy
-  env: {
-    CUSTOM_KEY: 'my-value',
   },
 };
 
