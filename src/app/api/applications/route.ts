@@ -25,8 +25,55 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate jobId format
+    if (!ObjectId.isValid(jobId)) {
+      return NextResponse.json(
+        { error: 'Invalid job ID format' },
+        { status: 400 }
+      )
+    }
+
     const studentId = new ObjectId(session.user.id)
     const jobObjectId = new ObjectId(jobId)
+
+    // Get student and job details first for eligibility check
+    const [student, job] = await Promise.all([
+      db.getStudentById(studentId),
+      db.getJobById(jobObjectId)
+    ])
+
+    if (!student || !job) {
+      return NextResponse.json(
+        { error: 'Student or job not found' },
+        { status: 404 }
+      )
+    }
+
+    // Check eligibility before allowing application
+    const { checkEligibility } = await import('@/lib/eligibility')
+    const eligibilityResult = checkEligibility(
+      {
+        cgpa: student.cgpa,
+        experience: student.experience,
+        branch: student.branch
+      },
+      {
+        minCgpa: job.minCgpa,
+        minExperience: job.minExperience,
+        requiredBranches: job.requiredBranches
+      }
+    )
+
+    if (!eligibilityResult.isEligible) {
+      return NextResponse.json(
+        { 
+          error: 'You are not eligible for this position',
+          reasons: eligibilityResult.reasons,
+          missingRequirements: eligibilityResult.missingRequirements
+        },
+        { status: 403 }
+      )
+    }
 
     // Check if student already applied for this job
     const existingApplications = await db.getApplicationsByStudent(studentId)
@@ -53,29 +100,22 @@ export async function POST(request: NextRequest) {
     // Update job's applications array
     await db.addApplicationToJob(jobObjectId, studentId)
 
-    // Get student and job details for Google Sheets logging
-    const [student, job] = await Promise.all([
-      db.getStudentById(studentId),
-      db.getJobById(jobObjectId)
-    ])
-
     // Log to Google Sheets (async, doesn't block the response)
-    if (student && job) {
-      googleSheetsService.logJobApplication({
-        studentName: student.name,
-        studentEmail: student.email,
-        studentBranch: student.branch,
-        studentCgpa: student.cgpa,
-        jobTitle: job.title,
-        companyName: job.company,
-        applicationDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
-        resumeLink: resumeLink || '',
-        status: 'Applied'
-      }).catch(error => {
-        // Log error but don't fail the application
-        console.error('Google Sheets logging failed:', error)
-      })
-    }
+    // We already have student and job data from earlier eligibility check
+    googleSheetsService.logJobApplication({
+      studentName: student.name,
+      studentEmail: student.email,
+      studentBranch: student.branch,
+      studentCgpa: student.cgpa,
+      jobTitle: job.title,
+      companyName: job.company,
+      applicationDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+      resumeLink: resumeLink || '',
+      status: 'Applied'
+    }).catch(error => {
+      // Log error but don't fail the application
+      console.error('Google Sheets logging failed:', error)
+    })
 
     return NextResponse.json({ 
       message: 'Application submitted successfully',

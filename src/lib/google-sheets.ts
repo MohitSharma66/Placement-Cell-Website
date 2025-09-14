@@ -21,11 +21,14 @@ export class GoogleSheetsService {
         return;
       }
 
+      // Fix escaped newlines in private key (common in environment variables)
+      const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
       // Create JWT auth client with environment variables
       this.auth = new google.auth.JWT(
         clientEmail,
         undefined,
-        privateKey,
+        formattedPrivateKey,
         ['https://www.googleapis.com/auth/spreadsheets']
       );
 
