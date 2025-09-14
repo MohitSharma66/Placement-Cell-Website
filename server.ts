@@ -35,7 +35,7 @@ async function createCustomServer() {
     const allowedOrigins = dev ? [
       'http://localhost:5000',
       'http://127.0.0.1:5000',
-      'https://063df6f9-831d-45df-bf9a-d3fb5823981b-00-k4kqrt2jv18p.picard.replit.dev'
+      'https://4e25888c-04a6-484d-a752-b11216db3cb1-00-1opuzl9klvcxv.kirk.replit.dev'
     ] : [
       process.env.NEXTAUTH_URL || 'http://localhost:5000'
     ];
