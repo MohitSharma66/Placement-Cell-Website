@@ -1,7 +1,6 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { db } from './db-mongodb'
-import { ObjectId } from 'mongodb'
+import { db } from './db-adapter'
 
 export const authOptions = {
   providers: [
@@ -36,7 +35,7 @@ export const authOptions = {
 
           // User exists in database
           return {
-            id: user._id?.toString(),
+            id: user.id,
             email: user.email,
             name: user.name,
             userType: credentials.userType,
