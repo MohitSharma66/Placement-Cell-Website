@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { db } from '@/lib/db-mongodb'
-import { ObjectId } from 'mongodb'
+import { db } from '@/lib/db-unified'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const recruiterId = new ObjectId(session.user.id)
+    const recruiterId = session.user.id
     const jobId = await db.createJob({
       title,
       description,
@@ -44,7 +43,7 @@ export async function POST(request: NextRequest) {
       requiredBranches,
       location,
       salary,
-      postedBy: recruiterId
+      postedById: recruiterId
     })
 
     return NextResponse.json({ 

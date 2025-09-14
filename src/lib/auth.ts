@@ -1,6 +1,6 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { db } from './db-adapter'
+import { db } from './db-unified'
 
 export const authOptions = {
   providers: [
@@ -19,6 +19,11 @@ export const authOptions = {
         try {
           let user
           
+          // For development/testing only - accept any password for existing users
+          // SECURITY: This is disabled in production
+          if (process.env.NODE_ENV === 'production') {
+            return null // Require proper password implementation in production
+          }
           if (credentials.userType === 'student') {
             user = await db.getStudentByEmail(credentials.email)
             if (!user) {
@@ -33,9 +38,11 @@ export const authOptions = {
             return null
           }
 
-          // User exists in database
+          // Normalize user ID across MongoDB and Prisma
+          const userId = user._id ? user._id.toString() : user.id
+
           return {
-            id: user.id,
+            id: userId,
             email: user.email,
             name: user.name,
             userType: credentials.userType,

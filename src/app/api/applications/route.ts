@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { db } from '@/lib/db-mongodb'
-import { ObjectId } from 'mongodb'
+import { db } from '@/lib/db-unified'
 import { googleSheetsService } from '@/lib/google-sheets'
 
 export async function POST(request: NextRequest) {
@@ -25,21 +24,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate jobId format
-    if (!ObjectId.isValid(jobId)) {
-      return NextResponse.json(
-        { error: 'Invalid job ID format' },
-        { status: 400 }
-      )
-    }
-
-    const studentId = new ObjectId(session.user.id)
-    const jobObjectId = new ObjectId(jobId)
+    // Use string IDs for Prisma
+    const studentId = session.user.id
+    const jobIdString = jobId
 
     // Get student and job details first for eligibility check
     const [student, job] = await Promise.all([
       db.getStudentById(studentId),
-      db.getJobById(jobObjectId)
+      db.getJobById(jobIdString)
     ])
 
     if (!student || !job) {
@@ -76,10 +68,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if student already applied for this job
-    const existingApplications = await db.getApplicationsByStudent(studentId)
-    const alreadyApplied = existingApplications.some(app => app.jobId.equals(jobObjectId))
+    const existingApplication = await db.getApplication(studentId, jobIdString)
     
-    if (alreadyApplied) {
+    if (existingApplication) {
       return NextResponse.json(
         { error: 'Already applied for this job' },
         { status: 400 }
@@ -89,16 +80,9 @@ export async function POST(request: NextRequest) {
     // Create application
     const applicationId = await db.createApplication({
       studentId,
-      jobId: jobObjectId,
-      status: 'pending',
+      jobId: jobIdString,
       resumeLink: resumeLink || ''
     })
-
-    // Update student's applications array
-    await db.addApplicationToStudent(studentId, jobObjectId)
-
-    // Update job's applications array
-    await db.addApplicationToJob(jobObjectId, studentId)
 
     // Log to Google Sheets (async, doesn't block the response)
     // We already have student and job data from earlier eligibility check
