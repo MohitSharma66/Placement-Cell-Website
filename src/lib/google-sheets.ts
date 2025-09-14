@@ -13,21 +13,19 @@ export class GoogleSheetsService {
   private async initializeAuth() {
     try {
       // Check if Google service account credentials are available
-      const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+      const clientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
+      const privateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
       
-      if (!credentials) {
+      if (!clientEmail || !privateKey) {
         console.log('Google Sheets: No service account credentials found');
         return;
       }
 
-      // Parse the service account key
-      const serviceAccountKey = JSON.parse(credentials);
-      
-      // Create JWT auth client
+      // Create JWT auth client with environment variables
       this.auth = new google.auth.JWT(
-        serviceAccountKey.client_email,
+        clientEmail,
         undefined,
-        serviceAccountKey.private_key,
+        privateKey,
         ['https://www.googleapis.com/auth/spreadsheets']
       );
 
@@ -61,7 +59,7 @@ export class GoogleSheetsService {
         return;
       }
 
-      const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+      const spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID;
       
       if (!spreadsheetId) {
         console.log('Google Sheets ID not configured - skipping log');
@@ -138,7 +136,7 @@ export class GoogleSheetsService {
         throw new Error('Google Sheets service not initialized');
       }
 
-      const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
+      const spreadsheetId = process.env.GOOGLE_SHEETS_SHEET_ID;
       
       if (!spreadsheetId) {
         throw new Error('Google Sheets ID not configured');
